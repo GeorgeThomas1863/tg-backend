@@ -1,0 +1,20 @@
+# Telethon session — grants account access, never commit
+session
+*.session
+*.session-journal
+
+# Python / uv
+__pycache__/
+*.pyc
+.venv/
+
+# Secrets — ignore real .env everywhere, but keep the committed template
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# Node
+node_modules/
+dist/
