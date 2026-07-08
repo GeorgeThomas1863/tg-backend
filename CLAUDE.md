@@ -15,7 +15,10 @@ Backend (from `backend/`, using `uv`):
 
 Required env vars (repo-root `.env`): `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`, `TELEGRAM_CHANNEL` (username or numeric ID). Optional: `FRONTEND_ORIGIN` (defaults to `http://localhost:5173`, used for CORS).
 
-Frontend: **not scaffolded yet.** `frontend/` has source files (`src/App.jsx`, `src/Main.jsx`, etc.) and an `index.html` that assumes a Vite dev server, but there is no `package.json`, `vite.config.js`, or `node_modules`. There is no `npm install` / `npm run dev` to run until that scaffold is created.
+Frontend (from `frontend/`, using `npm`):
+- Install deps: `npm install`
+- Run dev server: `npm run dev` (Vite, serves at `http://localhost:5173`)
+- Optional env var: `VITE_API_BASE` (defaults to `http://localhost:8000`) — set this if the backend isn't running on the default host/port.
 
 No test suite or linter is configured on either side yet — don't invent `pytest`/`eslint`/`vitest` commands; if tests get added, the runner setup is part of that work.
 
@@ -33,5 +36,3 @@ The core mechanic worth understanding before touching streaming code: `GET /stre
 **Frontend** follows one direction of data flow: `hooks/useVideos.js` fetches and holds state → `App.jsx` composes state with presentation → `components/VideoPlayer.jsx` is pure presentation, taking a video object and knowing nothing about fetching. `api/client.js` is the single place that knows the backend base URL (`VITE_API_BASE`, defaults to `localhost:8000`) and builds stream/thumb URLs — components never construct backend URLs themselves.
 
 `App.jsx` currently renders only the single most-recent video (`useVideos(1)`). The near-term direction is a gallery/grid of multiple videos, so `App.jsx`'s single-video assumption is expected to be the first thing that changes — not `useVideos` or `VideoPlayer`, which are already list-shaped.
-
-**Known landmine:** `index.html` loads `/src/main.jsx`, but the file is `Main.jsx` (capital M). This resolves fine on Windows' case-insensitive filesystem but will 404 on a case-sensitive one (Linux dev machines, most CI, most hosting). Fix the casing when the frontend build gets scaffolded.
