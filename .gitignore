@@ -32,3 +32,6 @@ npm-debug.log*
 .claude/.tmp/
 .claude/.pics/
 .claude/settings.local.json
+
+# Session history (already self-ignored via .remember/.gitignore; explicit here too)
+.remember/
