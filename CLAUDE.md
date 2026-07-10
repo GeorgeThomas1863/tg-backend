@@ -13,7 +13,7 @@ Backend (from `backend/`, using `uv`):
 - Run dev server: `uv run python main.py` (reload enabled; listens on `BACKEND_PORT`. `config.py` loads the repo-root `.env` itself via `python-dotenv`, so no `--env-file` flag is needed)
 - First run opens an interactive Telethon login prompt (phone + code) in the terminal; after that it reuses the `backend/session` file (gitignored — never commit it)
 
-Required env vars (repo-root `.env`): `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`, `TELEGRAM_CHANNEL` (username or numeric ID). Optional: `BACKEND_PORT` (default 8000), `FRONTEND_PORT` (default 5173), `FRONTEND_ORIGIN` (defaults to `http://localhost:<FRONTEND_PORT>`, used for CORS).
+Required env vars (repo-root `.env`): `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`, `TELEGRAM_CHANNEL` (username or numeric ID), `PW_HASH` (bcrypt hash of the site password — single-quote it so the `$` signs stay literal), `SESSION_SECRET` (signs the session cookie). Optional: `BACKEND_PORT` (default 8000), `FRONTEND_PORT` (default 5173), `FRONTEND_ORIGIN` (defaults to `http://localhost:<FRONTEND_PORT>`, used for CORS).
 
 Frontend (from `frontend/`, using `npm`):
 - Install deps: `npm install`
@@ -25,7 +25,7 @@ No test suite or linter is configured on either side yet — don't invent `pytes
 ## Architecture
 
 **Backend** is split by concern, not by feature:
-- `main.py` — HTTP only: routes, Range-header parsing, status codes. Delegates everything Telegram-related to `telegram.py`.
+- `main.py` — HTTP only: routes, Range-header parsing, status codes, and the site auth (bcrypt password check via `POST /api/auth`, signed session cookie, `require_auth` dependency gating every data route). Delegates everything Telegram-related to `telegram.py`.
 - `telegram.py` — owns the single shared `TelegramClient` (one session, one event loop — sized for the 1-2 user scale this is built for). All streaming/download logic lives here, including the Telegram-specific quirk that download offsets must be 4096-byte aligned.
 - `config.py` — env vars plus the download tuning constants (`ALIGN`, `REQUEST_SIZE`) that `telegram.py` depends on.
 

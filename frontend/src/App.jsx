@@ -1,12 +1,19 @@
 import { useVideos } from "./hooks/useVideos";
 import { VideoPlayer } from "./components/VideoPlayer";
+import { PasswordGate } from "./components/PasswordGate";
 
 // Root component. Composes data (useVideos) with presentation (VideoPlayer).
 // For now it shows a single video — the most recent one.
 export default function App() {
-  const { videos, loading, error } = useVideos(1);
+  const { videos, loading, error, unauthorized, refetch } = useVideos(1);
 
   if (loading) return <div style={styles.page}>Loading…</div>;
+  if (unauthorized)
+    return (
+      <div style={styles.page}>
+        <PasswordGate onSuccess={refetch} />
+      </div>
+    );
   if (error) return <div style={styles.page}>Error loading videos: {error}</div>;
   if (videos.length === 0) return <div style={styles.page}>No videos found.</div>;
 

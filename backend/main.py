@@ -5,12 +5,15 @@ All Telegram work is delegated to the telegram module.
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Request
+import bcrypt
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from starlette.middleware.sessions import SessionMiddleware
 
 import telegram
-from config import BACKEND_PORT, FRONTEND_ORIGIN
+from config import BACKEND_PORT, FRONTEND_ORIGIN, PW_HASH, SESSION_SECRET
 
 
 @asynccontextmanager
@@ -22,12 +25,55 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+# Signed session cookie; the login route sets "authenticated" in it.
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=SESSION_SECRET,
+    max_age=24 * 60 * 60,  # 24 hours
+    same_site="strict",
+)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[FRONTEND_ORIGIN],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# --- auth ---
+
+
+class AuthBody(BaseModel):
+    pw: str
+
+
+def check_password(pw: str) -> bool:
+    """Compare a submitted password against the bcrypt hash from config."""
+    try:
+        return bcrypt.checkpw(pw.encode(), PW_HASH.encode())
+    except ValueError as e:
+        print(f"BCRYPT ERROR (is PW_HASH a valid bcrypt hash?): {e}")
+        return False
+
+
+def require_auth(request: Request) -> None:
+    """Route dependency: reject requests whose session isn't authenticated."""
+    if not request.session.get("authenticated"):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+
+@app.post("/api/auth")
+async def login(body: AuthBody, request: Request):
+    if not check_password(body.pw):
+        return {"success": False, "message": "Wrong password"}
+
+    request.session["authenticated"] = True
+    return {"success": True, "message": "Authenticated"}
+
+
+# --- videos ---
 
 
 def parse_range(range_header: str, file_size: int):
@@ -61,12 +107,12 @@ def parse_range(range_header: str, file_size: int):
     return start, end
 
 
-@app.get("/api/videos")
+@app.get("/api/videos", dependencies=[Depends(require_auth)])
 async def videos(limit: int = 50):
     return await telegram.list_videos(limit)
 
 
-@app.get("/stream/{msg_id}")
+@app.get("/stream/{msg_id}", dependencies=[Depends(require_auth)])
 async def stream(msg_id: int, request: Request):
     msg = await telegram.get_message(msg_id)
     if not msg or not msg.file:
@@ -101,7 +147,7 @@ async def stream(msg_id: int, request: Request):
     )
 
 
-@app.get("/thumb/{msg_id}")
+@app.get("/thumb/{msg_id}", dependencies=[Depends(require_auth)])
 async def thumb(msg_id: int):
     msg = await telegram.get_message(msg_id)
     if not msg:

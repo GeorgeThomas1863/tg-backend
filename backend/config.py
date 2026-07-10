@@ -13,6 +13,12 @@ API_ID = int(os.environ["TELEGRAM_API_ID"])
 API_HASH = os.environ["TELEGRAM_API_HASH"]
 CHANNEL = os.environ["TELEGRAM_CHANNEL"]  # "mychannel" or -1001234567890
 
+# Site auth. PW_HASH is a bcrypt hash of the site password (single-quote it in
+# .env — the $ signs must stay literal). SESSION_SECRET signs the session
+# cookie. Both required — the app must not start unprotected.
+PW_HASH = os.environ["PW_HASH"]
+SESSION_SECRET = os.environ["SESSION_SECRET"]
+
 # Telegram download constraints (verified against Telegram's files API and
 # Telethon source):
 #   - request_size must be a multiple of 4096 bytes.
