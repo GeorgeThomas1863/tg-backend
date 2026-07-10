@@ -35,3 +35,4 @@ npm-debug.log*
 
 # Session history (already self-ignored via .remember/.gitignore; explicit here too)
 .remember/
+.playwright-mcp
