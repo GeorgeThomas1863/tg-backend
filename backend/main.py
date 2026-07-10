@@ -10,7 +10,7 @@ from fastapi.responses import StreamingResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 import telegram
-from config import FRONTEND_ORIGIN
+from config import BACKEND_PORT, FRONTEND_ORIGIN
 
 
 @asynccontextmanager
@@ -112,3 +112,9 @@ async def thumb(msg_id: int):
         raise HTTPException(status_code=404, detail="No thumbnail available")
 
     return Response(content=data, media_type="image/jpeg")
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run("main:app", port=BACKEND_PORT, reload=True)

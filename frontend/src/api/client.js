@@ -1,7 +1,8 @@
 // Single source of truth for the backend URL and how we talk to it.
-// In dev, Vite (5173) calls FastAPI (8000).
+// VITE_API_BASE is injected by vite.config.js from the repo-root .env:
+// an explicit VITE_API_BASE wins, else http://localhost:<BACKEND_PORT>.
 
-const BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
+const BASE = import.meta.env.VITE_API_BASE;
 
 export async function fetchVideos(limit = 50) {
   const res = await fetch(`${BASE}/api/videos?limit=${limit}`);

@@ -27,3 +27,8 @@ npm-debug.log*
 !.vscode/extensions.json
 .idea/
 .DS_Store
+
+# Claude Code — local scratch/screenshots and per-machine settings
+.claude/.tmp/
+.claude/.pics/
+.claude/settings.local.json
