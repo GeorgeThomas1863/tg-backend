@@ -109,7 +109,10 @@ def parse_range(range_header: str, file_size: int):
 
 @app.get("/api/videos", dependencies=[Depends(require_auth)])
 async def videos(limit: int = 50):
-    return await telegram.list_videos(limit)
+    result = await telegram.list_videos(limit)
+    if result is None:
+        raise HTTPException(status_code=502, detail="Telegram request failed")
+    return result
 
 
 @app.get("/stream/{msg_id}", dependencies=[Depends(require_auth)])

@@ -8,10 +8,18 @@ from dotenv import load_dotenv
 # Repo-root .env, shared with the frontend. Already-set env vars win.
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
+def parse_channel(raw: str) -> int | str:
+    """Telethon needs numeric channel IDs as int; usernames stay strings."""
+    stripped = raw.strip()
+    if stripped.lstrip("-").isdigit():
+        return int(stripped)
+    return stripped
+
+
 # From https://my.telegram.org -> "API development tools"
 API_ID = int(os.environ["TELEGRAM_API_ID"])
 API_HASH = os.environ["TELEGRAM_API_HASH"]
-CHANNEL = os.environ["TELEGRAM_CHANNEL"]  # "mychannel" or -1001234567890
+CHANNEL = parse_channel(os.environ["TELEGRAM_CHANNEL"])  # "mychannel" or -1001234567890
 
 # Site auth. PW_HASH is a bcrypt hash of the site password (single-quote it in
 # .env — the $ signs must stay literal). SESSION_SECRET signs the session
