@@ -27,50 +27,15 @@ export function PasswordGate({ onSuccess }) {
   }
 
   return (
-    <form style={styles.form} onSubmit={submitPassword}>
-      <label style={styles.label} htmlFor="pw-input">
+    <form className="pw-form" onSubmit={submitPassword}>
+      <label className="pw-label" htmlFor="pw-input">
         Enter the site password
       </label>
-      <input
-        id="pw-input"
-        type="password"
-        value={pw}
-        onChange={(event) => setPw(event.target.value)}
-        style={styles.input}
-        autoFocus
-      />
-      <button style={styles.button} type="submit" disabled={submitting}>
+      <input id="pw-input" type="password" className="pw-input" value={pw} onChange={(event) => setPw(event.target.value)} autoFocus />
+      <button className="pw-button" type="submit" disabled={submitting}>
         {submitting ? "Checking…" : "Submit"}
       </button>
-      {message && <div style={styles.message}>{message}</div>}
+      {message && <div className="pw-message">{message}</div>}
     </form>
   );
 }
-
-const styles = {
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 12,
-    maxWidth: 320,
-    margin: "80px auto 0",
-  },
-  label: { fontSize: 18, fontWeight: 600 },
-  input: {
-    padding: "10px 12px",
-    fontSize: 16,
-    border: "1px solid #ccc",
-    borderRadius: 6,
-  },
-  button: {
-    padding: "10px 12px",
-    fontSize: 16,
-    fontWeight: 600,
-    border: "none",
-    borderRadius: 6,
-    background: "#222",
-    color: "#fff",
-    cursor: "pointer",
-  },
-  message: { color: "#c00", fontSize: 14 },
-};

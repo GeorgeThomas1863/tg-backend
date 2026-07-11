@@ -1,24 +1,38 @@
 import { streamUrl, thumbUrl } from "../api/client";
+import { formatDate, formatDuration, formatSize } from "../format";
 
-// Renders a single video with native controls. Takes one video object;
-// knows nothing about fetching.
+// Renders one video with native controls plus its metadata list.
+// Pure presentation: takes a video object, knows nothing about fetching.
 export function VideoPlayer({ video }) {
   return (
-    <div style={styles.wrap}>
-      <h1 style={styles.title}>{video.name}</h1>
-      <video style={styles.video} src={streamUrl(video.id)} poster={thumbUrl(video.id)} controls preload="metadata" />
-      <div style={styles.meta}>
-        {video.width && video.height ? `${video.width}×${video.height} · ` : ""}
-        {video.duration ? `${Math.round(video.duration)}s · ` : ""}
-        {(video.size / (1024 * 1024)).toFixed(1)} MB
-      </div>
+    <div className="player">
+      <video className="player-video" src={streamUrl(video.id)} poster={thumbUrl(video.id)} controls autoPlay preload="metadata" />
+      <dl className="player-meta">
+        <div className="player-meta-item">
+          <dt>Message</dt>
+          <dd>{video.id}</dd>
+        </div>
+        <div className="player-meta-item">
+          <dt>Date</dt>
+          <dd>{formatDate(video.date)}</dd>
+        </div>
+        <div className="player-meta-item">
+          <dt>Duration</dt>
+          <dd>{formatDuration(video.duration)}</dd>
+        </div>
+        <div className="player-meta-item">
+          <dt>Size</dt>
+          <dd>{formatSize(video.size)}</dd>
+        </div>
+        {video.width && video.height ? (
+          <div className="player-meta-item">
+            <dt>Resolution</dt>
+            <dd>
+              {video.width}×{video.height}
+            </dd>
+          </div>
+        ) : null}
+      </dl>
     </div>
   );
 }
-
-const styles = {
-  wrap: {},
-  title: { fontSize: 20, fontWeight: 600, marginBottom: 16 },
-  video: { width: "100%", borderRadius: 8, background: "#000" },
-  meta: { marginTop: 12, color: "#666", fontSize: 14 },
-};
