@@ -61,6 +61,19 @@ describe("postLogin", () => {
     await expect(postLogin("hunter2")).resolves.toEqual({ success: false, message: "HTTP 403" });
   });
 
+  test("returns the backend message for a rate-limited response", async () => {
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 429,
+      json: async () => ({ message: "Too many attempts. Try again later." }),
+    });
+
+    await expect(postLogin("hunter2")).resolves.toEqual({
+      success: false,
+      message: "Too many attempts. Try again later.",
+    });
+  });
+
   test("resolves {success:false, message} instead of throwing when fetch rejects (network error)", async () => {
     vi.spyOn(console, "log").mockImplementation(() => {}); // silence the source's console.log
     fetchMock.mockRejectedValue(new TypeError("Failed to fetch"));

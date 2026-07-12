@@ -7,13 +7,21 @@ from contextlib import asynccontextmanager
 
 import bcrypt
 from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.responses import StreamingResponse, Response
+from fastapi.responses import JSONResponse, StreamingResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
 
 import telegram
-from config import BACKEND_PORT, FRONTEND_ORIGIN, PW_HASH, SESSION_SECRET
+from config import (
+    AUTH_MAX_ATTEMPTS,
+    AUTH_WINDOW_SECONDS,
+    BACKEND_PORT,
+    FRONTEND_ORIGIN,
+    PW_HASH,
+    SESSION_SECRET,
+)
+from rate_limit import AuthRateLimiter
 
 
 @asynccontextmanager
@@ -24,6 +32,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+auth_limiter = AuthRateLimiter(AUTH_MAX_ATTEMPTS, AUTH_WINDOW_SECONDS)
 
 # Signed session cookie; the login route sets "authenticated" in it.
 app.add_middleware(
@@ -66,9 +75,23 @@ def require_auth(request: Request) -> None:
 
 @app.post("/api/auth")
 async def login(body: AuthBody, request: Request):
+    client_ip = request.client.host if request.client else "unknown"
+    retry_after = auth_limiter.retry_after(client_ip)
+    if retry_after is not None:
+        return JSONResponse(
+            status_code=429,
+            content={
+                "success": False,
+                "message": "Too many attempts. Try again later.",
+            },
+            headers={"Retry-After": str(retry_after)},
+        )
+
     if not check_password(body.pw):
+        auth_limiter.record_failure(client_ip)
         return {"success": False, "message": "Wrong password"}
 
+    auth_limiter.clear(client_ip)
     request.session["authenticated"] = True
     return {"success": True, "message": "Authenticated"}
 

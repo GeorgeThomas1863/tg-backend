@@ -2,6 +2,7 @@
 
 import main
 import telegram
+from rate_limit import AuthRateLimiter
 
 
 # --- check_password ---
@@ -45,6 +46,35 @@ def test_login_correct_password_sets_session_cookie(client, monkeypatch):
 
 def test_login_missing_pw_field_returns_422(client):
     assert client.post("/api/auth", json={}).status_code == 422
+
+
+def test_login_is_rate_limited_after_maximum_failures(client, monkeypatch):
+    limiter = AuthRateLimiter(max_attempts=2, window_seconds=60)
+    monkeypatch.setattr(main, "auth_limiter", limiter)
+
+    assert client.post("/api/auth", json={"pw": "wrong-1"}).status_code == 200
+    assert client.post("/api/auth", json={"pw": "wrong-2"}).status_code == 200
+
+    resp = client.post("/api/auth", json={"pw": "test-password"})
+
+    assert resp.status_code == 429
+    assert resp.json() == {
+        "success": False,
+        "message": "Too many attempts. Try again later.",
+    }
+    assert int(resp.headers["Retry-After"]) > 0
+
+
+def test_successful_login_clears_failed_attempts(client, monkeypatch):
+    limiter = AuthRateLimiter(max_attempts=2, window_seconds=60)
+    monkeypatch.setattr(main, "auth_limiter", limiter)
+
+    client.post("/api/auth", json={"pw": "wrong"})
+    assert client.post("/api/auth", json={"pw": "test-password"}).status_code == 200
+
+    client.cookies.clear()
+    assert client.post("/api/auth", json={"pw": "wrong-again"}).status_code == 200
+    assert client.post("/api/auth", json={"pw": "test-password"}).status_code == 200
 
 
 # --- unauthenticated gates (one per route: each can regress independently) ---

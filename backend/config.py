@@ -27,6 +27,16 @@ CHANNEL = parse_channel(os.environ["TELEGRAM_CHANNEL"])  # "mychannel" or -10012
 PW_HASH = os.environ["PW_HASH"]
 SESSION_SECRET = os.environ["SESSION_SECRET"]
 
+# Authentication rate limit. Failed attempts are tracked per client IP in the
+# backend process; these defaults match the documented production settings.
+AUTH_MAX_ATTEMPTS = int(os.environ.get("AUTH_MAX_ATTEMPTS", "10"))
+AUTH_WINDOW_SECONDS = int(os.environ.get("AUTH_WINDOW_SECONDS", "900"))
+
+if AUTH_MAX_ATTEMPTS <= 0:
+    raise ValueError("AUTH_MAX_ATTEMPTS must be greater than zero")
+if AUTH_WINDOW_SECONDS <= 0:
+    raise ValueError("AUTH_WINDOW_SECONDS must be greater than zero")
+
 # Telegram download constraints (verified against Telegram's files API and
 # Telethon source):
 #   - request_size must be a multiple of 4096 bytes.

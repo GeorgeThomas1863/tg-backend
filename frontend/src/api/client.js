@@ -25,7 +25,15 @@ export async function postLogin(pw) {
       credentials: "include",
       body: JSON.stringify({ pw }),
     });
-    if (!res.ok) return { success: false, message: `HTTP ${res.status}` };
+    if (!res.ok) {
+      let data = null;
+      try {
+        data = await res.json();
+      } catch {
+        // Some proxy/server errors do not include a JSON response body.
+      }
+      return { success: false, message: data?.message || `HTTP ${res.status}` };
+    }
     return res.json();
   } catch (e) {
     console.log("LOGIN ERROR: " + e.message);
