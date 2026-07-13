@@ -27,6 +27,8 @@ os.environ["SESSION_SECRET"] = "test-secret"
 os.environ["PW_HASH"] = bcrypt.hashpw(
     b"test-password", bcrypt.gensalt(rounds=4)
 ).decode()
+os.environ["CACHE_DIR"] = tempfile.mkdtemp(prefix="tg-backend-cache-")
+os.environ["TG_CONNECTIONS"] = "2"
 
 _original_cwd = os.getcwd()
 os.chdir(tempfile.mkdtemp(prefix="tg-backend-tests-"))

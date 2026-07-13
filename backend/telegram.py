@@ -6,16 +6,19 @@ route handlers in main.py stay purely about HTTP. The byte-range streaming
 logic (including Telegram's 4096-offset-alignment requirement) lives here.
 """
 
+import time
 import traceback
 from typing import AsyncGenerator, Optional
 
 from telethon import TelegramClient
 from telethon.tl.types import InputMessagesFilterVideo
 
-from config import API_ID, API_HASH, CHANNEL, ALIGN, REQUEST_SIZE
+from config import API_ID, API_HASH, CHANNEL, ALIGN, MSG_CACHE_TTL, REQUEST_SIZE
 
 # Single shared client. One session, one event loop — fine for 1-2 users.
 client = TelegramClient("session", API_ID, API_HASH)
+
+_msg_cache: dict[int, tuple[object, float]] = {}
 
 
 async def connect() -> None:
@@ -54,12 +57,43 @@ async def list_videos(limit: int = 50) -> Optional[list[dict]]:
 
 
 async def get_message(msg_id: int):
-    """Re-resolve a message fresh, sidestepping file_reference expiration."""
+    """Resolve a message, serving repeats from a short TTL cache."""
+    cached = read_cached_message(msg_id)
+    if cached is not None:
+        return cached
+
     try:
-        return await client.get_messages(CHANNEL, ids=msg_id)
+        msg = await client.get_messages(CHANNEL, ids=msg_id)
     except Exception:
         report_error(f"fetching message {msg_id} from {CHANNEL!r}")
         return None
+
+    if msg:
+        store_cached_message(msg_id, msg)
+    return msg
+
+
+def read_cached_message(msg_id: int):
+    entry = _msg_cache.get(msg_id)
+    if not entry:
+        return None
+    msg, fetched_at = entry
+    if time.monotonic() - fetched_at > MSG_CACHE_TTL:
+        del _msg_cache[msg_id]
+        return None
+    return msg
+
+
+def store_cached_message(msg_id: int, msg) -> None:
+    # Blunt size bound: reset rather than track LRU — refill is one RTT.
+    if len(_msg_cache) > 1024:
+        _msg_cache.clear()
+    _msg_cache[msg_id] = (msg, time.monotonic())
+
+
+def invalidate_message(msg_id: int) -> None:
+    """Drop a cached message (stale file_reference)."""
+    _msg_cache.pop(msg_id, None)
 
 
 async def get_thumbnail(msg) -> Optional[bytes]:

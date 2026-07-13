@@ -184,6 +184,18 @@ button {
 
 /*--- password gate ---*/
 
+.pw-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 20%;
+  opacity: 0.8;
+  z-index: -1;
+}
+
 .pw-form {
   display: flex;
   flex-direction: column;

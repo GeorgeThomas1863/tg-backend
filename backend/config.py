@@ -46,6 +46,20 @@ if AUTH_WINDOW_SECONDS <= 0:
 ALIGN = 4096                  # offset alignment requirement
 REQUEST_SIZE = 512 * 1024     # 512 KiB; multiple of 4096, valid request_size
 
+# Parallel download + disk cache tuning.
+TG_CONNECTIONS = int(os.environ.get("TG_CONNECTIONS", "4"))
+CACHE_DIR = Path(os.environ.get("CACHE_DIR", str(Path(__file__).resolve().parent / "cache")))
+CACHE_MAX_GB = float(os.environ.get("CACHE_MAX_GB", "20"))
+
+if TG_CONNECTIONS < 0:
+    raise ValueError("TG_CONNECTIONS must be >= 0 (0 disables the parallel pool)")
+if CACHE_MAX_GB <= 0:
+    raise ValueError("CACHE_MAX_GB must be greater than zero")
+
+BLOCK_SIZE = 4 * 1024 * 1024   # cache unit; multiple of ALIGN and REQUEST_SIZE
+READAHEAD_BLOCKS = 8           # blocks fetched ahead of the playhead (32 MiB)
+MSG_CACHE_TTL = 300            # seconds a resolved message stays fresh
+
 # Dev server ports; the frontend reads the same .env keys in vite.config.js.
 BACKEND_PORT = int(os.environ.get("BACKEND_PORT", "8000"))
 FRONTEND_PORT = int(os.environ.get("FRONTEND_PORT", "5173"))
